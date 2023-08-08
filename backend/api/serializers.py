@@ -145,11 +145,11 @@ class IngredientPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'amount')
-    
+
     def validate_amount(self, value):
         if value < settings.LEN_MIN_LIMIT or value > settings.LEN_MAX_LIMIT:
             raise serializers.ValidationError(
-                 'Количество ингредиентов должно быть от 1 до 32000')
+                'Количество ингредиентов должно быть от 1 до 32000')
         return value
 
 
@@ -205,11 +205,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('name', 'cooking_time', 'text',
                   'tags', 'ingredients', 'image')
-    
+
     def validate_cooking_time(self, value):
         if value < settings.LEN_MIN_LIMIT or value > settings.LEN_MAX_LIMIT:
             raise serializers.ValidationError(
-                 'Время приготовления должно быть от 1 мин до 32000 мин')
+                'Время приготовления должно быть от 1 мин до 32000 мин')
         return value
 
     def create_ingredients(self, ingredients, recipe):

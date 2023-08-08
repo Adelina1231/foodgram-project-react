@@ -1,7 +1,6 @@
-from django.core.validators import (MinValueValidator,
-                                    MaxValueValidator,
-                                    RegexValidator)
 from django.conf import settings
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 
 
 def validate_slug(value):

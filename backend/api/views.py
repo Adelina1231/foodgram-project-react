@@ -10,10 +10,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 
+from users.models import User
 from recipes.models import (Carts, Favorite, Ingredient, Recipe,
                             RecipeIngredient, Subscribe, Tag)
-from users.models import User
-
 from .filters import IngredienFilter, RecipeFilter
 from .pagination import CustomPaginator
 from .permissions import IsAuthorOrReadOnly
