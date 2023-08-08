@@ -87,7 +87,7 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Ингредиенты',
     )
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления, мин.',
         validators=(validate_cooking_time,)
     )
@@ -114,7 +114,7 @@ class RecipeIngredient(models.Model):
         related_name='recipe_ingredients',
         verbose_name='Ингредиент'
     )
-    amount = models.PositiveIntegerField(
+    amount = models.PositiveSmallIntegerField(
         'Количество ингредиента',
         validators=(validate_amount_ingredient,)
     )
@@ -149,6 +149,7 @@ class Subscribe(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+        ordering = ('author',)
         constraints = (
             models.UniqueConstraint(
                 fields=['user', 'author'],
@@ -177,6 +178,7 @@ class Favorite(models.Model):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные'
+        ordering = ('-id',)
         constraints = (
             models.UniqueConstraint(
                 fields=['user', 'recipe'], name='unique_favorite'
@@ -204,6 +206,7 @@ class Carts(models.Model):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
+        ordering = ('-id',)
         constraints = (
             models.UniqueConstraint(
                 fields=['user', 'recipe'], name='unique_carts'

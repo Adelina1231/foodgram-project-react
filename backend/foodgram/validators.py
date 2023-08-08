@@ -1,4 +1,7 @@
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import (MinValueValidator,
+                                    MaxValueValidator,
+                                    RegexValidator)
+from django.conf import settings
 
 
 def validate_slug(value):
@@ -8,10 +11,20 @@ def validate_slug(value):
 
 
 def validate_cooking_time(value):
-    value = MinValueValidator(1, 'Минимум одна минута')
+    validators = (MinValueValidator(settings.LEN_MIN_LIMIT,
+                                    'Минимум одна минута'),
+                  MaxValueValidator(settings.LEN_MAX_LIMIT,
+                                    'Слишком долго ждать приготовления'))
+    for validator in validators:
+        validator(value)
     return value
 
 
 def validate_amount_ingredient(value):
-    value = MinValueValidator(1, 'Минимум один ингредиент')
+    validators = (MinValueValidator(settings.LEN_MIN_LIMIT,
+                                    'Минимум один ингредиент'),
+                  MaxValueValidator(settings.LEN_MAX_LIMIT,
+                                    'Слишком много ингредиентов'))
+    for validator in validators:
+        validator(value)
     return value

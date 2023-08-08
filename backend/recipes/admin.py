@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Carts, Favorite, Ingredient, Recipe, Subscribe, Tag
+from .models import (Carts, Favorite, Ingredient, Recipe,
+                     Subscribe, Tag, RecipeIngredient)
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -17,13 +18,20 @@ class IngredientAdmin(admin.ModelAdmin):
     empy_value_display = '-пусто-'
 
 
+class RecipeIngredientAdmin(admin.TabularInline):
+    model = RecipeIngredient
+    autocomplete_fields = ('ingredient',)
+
+
 class RecipeAdmin(admin.ModelAdmin):
+    inlines = (RecipeIngredientAdmin,)
     list_display = (
         'id', 'author', 'name', 'image', 'text', 'pub_date', 'in_favorite'
     )
     search_fields = ('author', 'name', 'tags')
     list_filter = ('author', 'name', 'tags')
     empy_value_display = '-пусто-'
+    min_num = 1
 
     def in_favorite(self, obj):
         return obj.favorite_recipe.all().count()

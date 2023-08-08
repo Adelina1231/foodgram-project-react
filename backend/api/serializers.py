@@ -1,3 +1,4 @@
+from django.conf import settings
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
@@ -14,11 +15,10 @@ class UserSerializer(serializers.ModelSerializer):
                   'last_name', 'is_subscribed')
         model = User
 
-    def get_is_subscribed(self, obj) -> bool:
-        return (self.context.get('request').user.is_authenticated
-                and Subscribe.objects.filter(
-                    user=self.context.get('request').user,
-                    author=obj).exists())
+    def get_is_subscribed(self, author):
+        user = self.context.get('request').user
+        return (user.is_authenticated
+                and user.follower.filter(author=author).exists())
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -91,12 +91,10 @@ class SubscribeUserSerializer(serializers.ModelSerializer):
     def get_recipes_count(self, obj):
         return obj.recipes.count()
 
-    def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        return (request.user.is_authenticated
-                and Subscribe.objects.filter(
-                    user=request.user, author=obj
-                ).exists())
+    def get_is_subscribed(self, author):
+        user = self.context.get('request').user
+        return (user.is_authenticated
+                and user.follower.filter(author=author).exists())
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
@@ -113,7 +111,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'errors': 'Нельзя подписаться на самого себя!'}
             )
-        if Subscribe.objects.filter(user=user, author=author).exists():
+        if user.follower.filter(author=author).exists():
             raise serializers.ValidationError(
                 {'errors': 'Вы уже подписаны на данного пользователя!'}
             )
@@ -147,6 +145,12 @@ class IngredientPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'amount')
+    
+    def validate_amount(self, value):
+        if value < settings.LEN_MIN_LIMIT or value > settings.LEN_MAX_LIMIT:
+            raise serializers.ValidationError(
+                 'Количество ингредиентов должно быть от 1 до 32000')
+        return value
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -176,19 +180,16 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'image', 'text', 'cooking_time')
         read_only_fields = ('is_favorited', 'is_in_shopping_cart')
 
-    def get_is_favorited(self, obj):
+    def get_is_favorited(self, recipe):
         request = self.context.get('request')
         return (request and request.user.is_authenticated
-                and Favorite.objects.filter(
-                    user=request.user, recipe=obj
-                ).exists())
+                and request.user.favorite_user.filter(recipe=recipe
+                                                      ).exists())
 
-    def get_is_in_shopping_cart(self, obj):
+    def get_is_in_shopping_cart(self, recipe):
         request = self.context.get('request')
         return (request and request.user.is_authenticated
-                and Carts.objects.filter(
-                    user=request.user, recipe=obj
-                ).exists())
+                and request.user.carts.filter(recipe=recipe).exists())
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
@@ -198,11 +199,18 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all(), many=True
     )
     image = Base64ImageField(use_url=True)
+    cooking_time = serializers.IntegerField()
 
     class Meta:
         model = Recipe
         fields = ('name', 'cooking_time', 'text',
                   'tags', 'ingredients', 'image')
+    
+    def validate_cooking_time(self, value):
+        if value < settings.LEN_MIN_LIMIT or value > settings.LEN_MAX_LIMIT:
+            raise serializers.ValidationError(
+                 'Время приготовления должно быть от 1 мин до 32000 мин')
+        return value
 
     def create_ingredients(self, ingredients, recipe):
         RecipeIngredient.objects.bulk_create(
@@ -250,6 +258,14 @@ class FavoriteSerializer(serializers.ModelSerializer):
         model = Favorite
         fields = ('user', 'recipe')
 
+    def validate(self, data):
+        user = self.context.get('request').user
+        recipe = self.context.get('recipe_id')
+        if user.favorite_user.filter(recipe=recipe).exists():
+            raise serializers.ValidationError(
+                {'errors': 'Этот рецепт уже добавлен в избранное'})
+        return data
+
     def to_representation(self, instance):
         context = {'request': self.context.get('request')}
         return RecipeShortSerializer(instance.recipe, context=context).data
@@ -262,3 +278,11 @@ class CartsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Carts
         fields = ('user', 'recipe')
+
+    def validate(self, data):
+        user = self.context.get('request').user
+        recipe = self.context.get('recipe_id')
+        if user.carts.filter(recipe=recipe).exists():
+            raise serializers.ValidationError(
+                {'errors': 'Этот рецепт уже добавлен в список покупок'})
+        return data

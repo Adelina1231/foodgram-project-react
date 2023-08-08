@@ -59,8 +59,8 @@ class UserViewSet(CreateListRetrieveViewSet):
             permission_classes=(IsAuthenticated,))
     def set_password(self, request):
         serializer = UserSetPasswordSerializer(request.user, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response({'detail': 'Пароль успешно изменен!'},
                         status=status.HTTP_204_NO_CONTENT)
 
@@ -84,7 +84,7 @@ class SubscribeViewSet(APIView):
         author = get_object_or_404(User, id=user_id)
         user = request.user
         subscription = Subscribe.objects.filter(user=user, author=author)
-        if subscription:
+        if subscription.exists():
             subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(
@@ -128,16 +128,6 @@ class RecipeViewSet(ModelViewSet):
             return RecipeSerializer
         return RecipeCreateSerializer
 
-    def dispatch(self, request, *args, **kwargs):
-        res = super().dispatch(request, *args, **kwargs)
-
-        from django.db import connection
-        print(len(connection.queries))
-        for q in connection.queries:
-            print('>>>>', q['sql'])
-
-        return res
-
     def get_queryset(self):
         recipes = Recipe.objects.prefetch_related(
             'recipe_ingredients__ingredient', 'tags'
@@ -154,10 +144,6 @@ class RecipeViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
         if request.method == 'POST':
-            if Favorite.objects.filter(user=user, recipe=recipe).exists():
-                return Response(
-                    {'erorrs': 'Этот рецепт уже добавлен в избранное'},
-                    status=status.HTTP_400_BAD_REQUEST)
             favorite = Favorite.objects.create(user=user, recipe=recipe)
             serializer = FavoriteSerializer(favorite,
                                             context={'request': request})
@@ -181,10 +167,6 @@ class RecipeViewSet(ModelViewSet):
         recipe = get_object_or_404(Recipe, id=pk)
         user = request.user
         if request.method == 'POST':
-            if Carts.objects.filter(user=user, recipe=recipe).exists():
-                return Response(
-                    {'erorrs': 'Этот рецепт уже добавлен в список покупок'},
-                    status=status.HTTP_400_BAD_REQUEST)
             shopping_cart = Carts.objects.create(user=user, recipe=recipe)
             serializer = CartsSerializer(shopping_cart,
                                          context={'request': request})
