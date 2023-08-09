@@ -1,6 +1,7 @@
 from django.db.models import Sum
 from django.shortcuts import HttpResponse, get_object_or_404
-from rest_framework import status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, filters
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView
 from rest_framework.mixins import (CreateModelMixin, ListModelMixin,
@@ -113,6 +114,8 @@ class IngredientViewSet(ListRetrieveViewSet):
     serializer_class = IngredientSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = None
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('^name',)
     filterset_class = IngredienFilter
 
 
@@ -120,6 +123,7 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     permission_classes = (IsAuthorOrReadOnly,)
     pagination_class = CustomPaginator
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
