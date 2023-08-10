@@ -183,7 +183,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, recipe):
         request = self.context.get('request')
         return (request and request.user.is_authenticated
-                and request.user.favorite_user.filter(recipe=recipe
+                and request.user.favorite.filter(recipe=recipe
                                                       ).exists())
 
     def get_is_in_shopping_cart(self, recipe):
@@ -261,7 +261,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     def validate(self, data):
         user = self.context.get('request').user
         recipe = self.context.get('recipe_id')
-        if user.favorite_user.filter(recipe=recipe).exists():
+        if user.favorite.filter(recipe=recipe).exists():
             raise serializers.ValidationError(
                 {'errors': 'Этот рецепт уже добавлен в избранное'})
         return data

@@ -34,7 +34,7 @@ class RecipeAdmin(admin.ModelAdmin):
     min_num = 1
 
     def in_favorite(self, obj):
-        return obj.favorite_recipe.all().count()
+        return obj.favorite.all().count()
 
 
 class SubscribeAdmin(admin.ModelAdmin):
